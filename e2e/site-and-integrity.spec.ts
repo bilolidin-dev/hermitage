@@ -112,6 +112,50 @@ test.describe("public site behaviour", () => {
   });
 });
 
+test.describe("SEO", () => {
+  test("every public page has canonical, hreflang alternates and social tags", async ({ page }) => {
+    await page.goto("/ky/projects");
+    await expect(page).toHaveTitle("Долбоорлор — Hermitage");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/ky\/projects$/);
+    for (const lang of ["ru", "ky", "uz", "x-default"]) {
+      await expect(page.locator(`link[rel="alternate"][hreflang="${lang}"]`)).toHaveCount(1);
+    }
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/ky\/opengraph-image/);
+    await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute("content", "ky_KG");
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+  });
+
+  test("project pages get their own server-rendered title and description", async ({ page }) => {
+    await page.goto("/uz/projects/house-by-dark-garden");
+    await expect(page).toHaveTitle("Qorongʻi bogʻ yonidagi uy — Hermitage");
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /^Xususiy uyning namoyishiy loyihasi/);
+  });
+
+  test("home page describes the studio with schema.org data, without an invented address", async ({ page }) => {
+    await page.goto("/ru");
+    const data = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? "{}");
+    expect(data["@type"]).toBe("ProfessionalService");
+    expect(data.telephone).toBe("+996554884666");
+    expect(data.sameAs).toContain("https://www.instagram.com/hermitage_interior_design/");
+    expect(data.areaServed.map((c: { name: string }) => c.name)).toEqual(["Ош", "Бишкек"]);
+    expect(data.address).toBeUndefined();
+  });
+
+  test("robots.txt, sitemap.xml and preview images are served", async ({ request }) => {
+    const robots = await (await request.get("/robots.txt")).text();
+    expect(robots).toContain("Disallow: /admin");
+    expect(robots).toMatch(/Sitemap: .+\/sitemap\.xml/);
+    const sitemap = await (await request.get("/sitemap.xml")).text();
+    expect(sitemap.match(/<loc>/g)).toHaveLength(33); // 6 pages + 5 projects, × 3 languages
+    expect(sitemap).toContain("/uz/projects/house-by-dark-garden</loc>");
+    expect(sitemap).not.toContain("/admin");
+    expect(sitemap).not.toContain("minimal-kitchen"); // drafts are never listed
+    const image = await request.get("/uz/opengraph-image");
+    expect(image.status()).toBe(200);
+    expect(image.headers()["content-type"]).toBe("image/png");
+  });
+});
+
 test.describe("first-visit intro", () => {
   const state = (page: import("@playwright/test").Page) =>
     page.evaluate(() => ({

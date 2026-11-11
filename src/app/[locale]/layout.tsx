@@ -8,6 +8,7 @@ import { SiteIntro } from "@/components/public/site-intro";
 import { isLocale, LOCALES } from "@/lib/i18n";
 import { getPublicDictionary } from "@/lib/i18n/dictionaries";
 import { seedSettings } from "@/lib/seed/settings";
+import { pageMetadata, siteUrl } from "@/lib/seo";
 import { fontVariables } from "../fonts";
 import { baseMetadata } from "../shared-metadata";
 import "../globals.css";
@@ -23,14 +24,16 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  // Server-rendered defaults; the client applies SEO text edited in the admin panel.
+  // Server-rendered defaults (seed settings); the client applies SEO text edited in the admin panel.
   const seo = seedSettings().seo;
+  const home = pageMetadata(locale, "", { description: seo.description[locale] });
   return {
     ...baseMetadata,
+    ...home,
+    metadataBase: siteUrl(),
     title: { absolute: seo.title[locale], template: "%s — Hermitage" },
-    description: seo.description[locale],
-    alternates: { languages: Object.fromEntries(LOCALES.map((l) => [l, `/${l}`])) },
-    openGraph: { locale, siteName: "Hermitage Interior Design", type: "website" },
+    openGraph: { ...home.openGraph, title: seo.title[locale] },
+    twitter: { ...home.twitter, title: seo.title[locale] },
   };
 }
 

@@ -37,7 +37,9 @@ installed Chromium binary. Run a single file with
 
 1. Put this folder in a Git repository and import it in Vercel
    (**Add New → Project**). The Next.js preset is detected automatically.
-2. No environment variables are needed.
+2. Set `NEXT_PUBLIC_SITE_URL` to the real domain (e.g. `https://example.com`)
+   so canonical links, hreflang, Open Graph and the sitemap use it. Without it,
+   Vercel's production domain is used automatically (locally: `http://localhost:3000`).
 
 Each visitor gets their own copy of the demo data in their browser, so people
 viewing a deployed prototype do not see each other's edits.
@@ -142,6 +144,28 @@ Key decisions:
   where the demo data lives). Server HTML contains the page frame and default
   metadata; the content appears after hydration.
 
+## SEO
+
+- **Per page:** title and description in the page's language, canonical URL,
+  `hreflang` alternates (ru, ky, uz, x-default), Open Graph and Twitter tags,
+  correct `<html lang>`. Project pages get their own title and description
+  from the project data on the server; published projects are pre-rendered.
+- **Preview image:** `/{locale}/opengraph-image` renders the HERMITAGE
+  wordmark with the localized tagline (fonts in `src/assets/og`, SIL OFL).
+  No demo photograph is used as the studio's image.
+- **Structured data:** the home page includes schema.org `ProfessionalService`
+  JSON-LD (name, WhatsApp, Instagram, cities served). No street address is
+  published because none was provided.
+- **`/sitemap.xml`** lists every public page and published project in all
+  three languages with hreflang; drafts and `/admin` are excluded.
+  **`/robots.txt`** allows the site and disallows `/admin`.
+- **Limits of the demo:** search engines see the built-in content. Edits made
+  in the demo admin live in one browser, so they cannot reach the sitemap,
+  metadata or crawlers; with a backend, read published content on the server
+  (`generateMetadata`, `sitemap.ts`) instead of the seed data. Page bodies
+  render on the client; Google renders JavaScript, but other crawlers and link
+  previews rely on the server-rendered metadata above.
+
 ## Data, images and security in the demo
 
 **Persistence.** Each collection is one JSON document in localStorage
@@ -211,7 +235,8 @@ Only the repository layer changes; pages and components stay as they are.
 
 - Authentication and authorization for editors (see above).
 - A real backend for content and images (Firestore + Storage or similar).
-- Server-rendered public content and per-page metadata for search engines.
+- Server-rendered public content from the backend (metadata and sitemap
+  currently come from the built-in data, see SEO).
 - A Content-Security-Policy tuned to the final hosting and analytics (the
   intro's inline script will then need a nonce or hash).
 - Real studio content: logo, photographs, projects, texts, contacts/addresses.
