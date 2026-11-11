@@ -1,0 +1,258 @@
+@import "tailwindcss";
+
+@theme {
+  --color-espresso: #211d1c;
+  --color-ivory: #f5f2ed;
+  --color-stone: #e8e2d9;
+  --color-champagne: #a18b70;
+  --color-charcoal: #242321;
+  /* Darker champagne for small text on light grounds (AA contrast). */
+  --color-bronze: #7a6650;
+  --color-error: #9a3b2c;
+  /* Secondary text. Tested for WCAG AA (4.5:1) on ivory, stone, white and the admin canvas. */
+  --color-muted: #66605b;
+  /* Secondary text on espresso/charcoal (6.3:1). */
+  --color-muted-inverse: #a39e97;
+  --color-success: #4d6247;
+
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+  --breakpoint-xs: 26rem;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-ivory);
+    color: var(--color-espresso);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-champagne);
+    color: var(--color-ivory);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-champagne);
+    outline-offset: 3px;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  dialog {
+    color: inherit;
+  }
+  dialog::backdrop {
+    background: rgb(33 29 28 / 0.55);
+    backdrop-filter: blur(3px);
+  }
+}
+
+/* Display type: Cormorant Garamond set large and light. */
+@utility font-display {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  font-feature-settings: "lnum" 0, "kern";
+}
+
+/* Cormorant at smaller sizes (≈ under 36px): weight 300 gets too thin there. */
+@utility font-display-text {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+@utility text-balance-pretty {
+  text-wrap: pretty;
+}
+
+/* Thin rule used throughout as the architectural "drafting" line. */
+@utility hairline {
+  border-color: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Native <dialog> open/close animation */
+dialog[open].dialog-animate {
+  animation: dialog-in 0.28s var(--ease-out-expo);
+}
+dialog.drawer[open].dialog-animate {
+  animation: drawer-in 0.36s var(--ease-out-expo);
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+@keyframes drawer-in {
+  from {
+    opacity: 0.4;
+    transform: translateX(32px);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* First-visit intro (see components/public/site-intro.tsx)            */
+/* Timeline, 1.5s total: name rises 0.05–0.75s, rule draws 0.35–0.95s, */
+/* subline 0.6–1.05s, veil fades 1.05–1.5s. opacity/transform only.     */
+/* ------------------------------------------------------------------ */
+.site-intro {
+  display: none;
+}
+
+html[data-intro="play"] .site-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding-inline: 1rem;
+  background: var(--color-espresso);
+  color: var(--color-ivory);
+  pointer-events: none;
+  animation: intro-veil 1.5s linear forwards;
+}
+
+.site-intro__mark {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.site-intro__name {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.75rem, 8.5vw, 3.75rem);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  /* Tracking adds space after the last letter; pull it back so the word is optically centred. */
+  margin-right: -0.3em;
+  animation: intro-rise 0.7s var(--ease-out-expo) 0.05s both;
+}
+
+.site-intro__rule {
+  display: block;
+  align-self: stretch;
+  height: 1px;
+  margin-top: clamp(0.9rem, 2.4vw, 1.35rem);
+  background: var(--color-champagne);
+  transform-origin: center;
+  animation: intro-draw 0.6s var(--ease-in-out-quart) 0.35s both;
+}
+
+.site-intro__sub {
+  margin-top: clamp(0.8rem, 2.2vw, 1.15rem);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: clamp(0.56rem, 1.9vw, 0.72rem);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5em;
+  margin-right: -0.5em;
+  color: var(--color-muted-inverse);
+  animation: intro-fade 0.45s ease-out 0.6s both;
+}
+
+@keyframes intro-veil {
+  0%,
+  70% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.3em);
+  }
+}
+@keyframes intro-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The script already skips the intro; this guards against a setting change mid-session. */
+  html[data-intro="play"] .site-intro {
+    display: none;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e8e2d9 0%, #efebe4 50%, #e8e2d9 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
